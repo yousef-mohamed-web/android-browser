@@ -19,8 +19,8 @@ This is a compilable-oriented core starter, not a certified production browser. 
 2. **Sync correctness:** the included REST methods upload a new Google Drive file and overwrite OneDrive AppFolder content. Add Google file lookup/update, conflict resolution, encryption/signing of sync payloads, retries, deletion semantics and refresh-token refresh before enabling sync in UI.
 3. **Ad blocking:** included C++ matcher is a fast substring matcher and sample host list, not a complete EasyList parser, cosmetic-filter engine, or Gecko network interception layer. Production integration should use a GeckoView WebExtension implementing `webRequest`/declarative blocking with regularly updated filter lists; do not claim complete EasyList coverage until verified.
 4. **Tabs/PiP:** hibernation manager is a lifecycle primitive; connect it to a real tab model and persist tab metadata. Browser PiP entry only enters the activity's PiP mode; HTML5 media PiP requires GeckoView media-session/PiP integration and device testing.
-5. **Downloads:** segmented range requests require server support for `Accept-Ranges: bytes`; the sample downloader writes to app-specific external storage. Add persistent job metadata, integrity verification, redirect/auth/cookie support, retry policy, notification controls, and a user-facing SAF destination flow. Android 9 public shared storage needs runtime `WRITE_EXTERNAL_STORAGE`; app-specific external storage does not.
-6. **Security:** HTTPS is the default and cleartext is disabled globally. HTTP bypass is one-navigation and warned. Add certificate error UX, safe-browsing reputation, permission prompts, cookie controls, password manager threat model, encrypted Room key backup/rotation, and WebExtension permission review.
+5. **Downloads:** segmented range requests require server support for `Accept-Ranges: bytes`; the sample downloader writes to app-specific external storage. Add persistent job metadata, integrity verification, redirect/auth/cookie support, retry policy, notification controls, and a user-facing SAF destination flow. The downloader now targets app-specific external storage and does not request broad storage permission.
+6. **Security:** HTTPS is the default and cleartext is disabled globally. Non-web URI schemes are denied by the app's navigation delegate. Add certificate error UX, safe-browsing reputation, cookie controls, password-manager threat model, encrypted Room key rotation, and WebExtension permission review.
 7. **Gecko API compatibility:** GeckoView updates on Mozilla's release cadence. Compile against the exact pinned stable artifact and review API changes before release. Validate WebGL/WebAssembly/PWA/video support on target chipsets; no embedded engine can guarantee identical behavior on every OEM build.
 
 ## Project map
@@ -33,6 +33,16 @@ This is a compilable-oriented core starter, not a certified production browser. 
 - `sync/OAuthSyncManager.kt`: AppAuth provider authorization scaffolding and Drive/Graph upload endpoints.
 - `privacy/`: JNI matcher + sample block list.
 - `res/xml/network_security_config.xml`: no cleartext by default.
+
+## Security posture and limitations
+
+- The app has no JavaScript bridge exposing Android APIs to pages, and its app-private files/preferences/database are protected by Android's per-app sandbox. Web content is not granted direct filesystem access by this app.
+- Android backup is disabled. Cleartext HTTP is disabled by Android Network Security Config. GeckoView top-level navigation is allow-listed to HTTPS, with a one-navigation warning exception for HTTP; non-web schemes such as `file:`, `content:`, `data:`, `javascript:` and `intent:` are denied.
+- Downloads accept HTTPS only, reject redirects, sanitize filenames and write to the app-specific Downloads directory. FileProvider is limited to that directory and is not exported.
+- The manifest no longer requests legacy external-storage permission. Camera, microphone and location are not requested by the app manifest.
+- The Room database implementation is designed to use SQLCipher with an Android Keystore-backed encrypted preference for its key. It is not yet connected to the current UI, so do not assume history/bookmarks persistence is already active.
+- OAuth sync code is scaffolding. It can send user-selected sync data to Google Drive AppData or Microsoft OneDrive AppFolder only after an OAuth flow supplies a token; it is not currently connected to the browser UI. Review scopes and obtain explicit consent before enabling it.
+- This is a source-code review, not a penetration test. It cannot prove the absence of all vulnerabilities or guarantee that third-party sites, GeckoView, Android, or dependencies have no exploitable flaws. Before production, run dynamic tests, dependency vulnerability scanning, and a permissions/data-flow review on physical devices.
 
 ## GMS-free statement
 
