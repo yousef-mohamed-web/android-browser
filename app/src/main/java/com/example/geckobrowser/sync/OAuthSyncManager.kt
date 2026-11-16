@@ -65,7 +65,7 @@ class OAuthSyncManager(private val context: Context) {
     private fun putGoogleFile(token: String, json: String): String {
         val metadata = """{"name":"browser-sync.json","mimeType":"application/json","parents":["appDataFolder"]}"""
         val boundary = "gecko-sync-boundary"
-        val body = ("--$boundary
+        val body = """--$boundary
 Content-Type: application/json; charset=UTF-8
 
 $metadata
@@ -73,7 +73,7 @@ $metadata
 Content-Type: application/json
 
 $json
---$boundary--").toRequestBody("multipart/related; boundary=$boundary".toMediaType())
+--$boundary--"""
         val req = Request.Builder().url("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name")
             .header("Authorization", "Bearer $token").post(body).build()
         http.newCall(req).execute().use { r -> check(r.isSuccessful) { "Drive sync failed: ${r.code} ${r.body?.string()}" }; return r.body?.string().orEmpty() }
