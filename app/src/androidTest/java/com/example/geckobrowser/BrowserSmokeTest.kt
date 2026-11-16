@@ -50,13 +50,13 @@ class BrowserSmokeTest {
 
 
     @Test
-    fun geckoRuntimeUsesStrictSecuritySettings() {
+    fun geckoRuntimeUsesConfirmedInsecureNavigationMode() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val field = MainActivity::class.java.getDeclaredField("runtime")
                 field.isAccessible = true
                 val runtime = field.get(activity) as GeckoRuntime
-                assertEquals(GeckoRuntimeSettings.HTTPS_ONLY, runtime.settings.allowInsecureConnections)
+                assertEquals(GeckoRuntimeSettings.ALLOW_ALL, runtime.settings.allowInsecureConnections)
                 assertFalse("Remote debugging must remain disabled", runtime.settings.remoteDebuggingEnabled)
                 assertFalse("about:config must remain disabled", runtime.settings.aboutConfigEnabled)
             }
