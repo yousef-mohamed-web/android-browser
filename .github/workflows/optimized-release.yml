@@ -58,11 +58,11 @@ jobs:
             [ -f "$apk" ] || continue
             echo "===== APK: $apk ====="
             echo "--- Largest packaged entries (uncompressed) ---"
-            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {print $1 " " $4}' | sort -nr | head -n 25
+            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {print $1 " " $4}' | sort -nr | sed -n '1,25p'
             echo "--- Size by top-level directory ---"
-            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {n=split($4,a,"/"); key=a[1]; if (key != "") total[key]+=$1} END {for (k in total) printf "%12d %s\\n", total[k], k}' | sort -nr
+            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {n=split($4,a,"/"); key=a[1]; if (key != "") total[key]+=$1} END {for (k in total) printf "%12d %s\n", total[k], k}' | sort -nr
             echo "--- Native libraries by ABI ---"
-            unzip -l "$apk" | awk 'NF >= 4 && $4 ~ /^lib\\// {print $1 " " $4}' | sort -nr | head -n 30
+            unzip -l "$apk" | awk 'NF >= 4 && index($4, "lib/") == 1 {print $1 " " $4}' | sort -nr | sed -n '1,30p'
             echo
           done
 
