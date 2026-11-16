@@ -1,6 +1,6 @@
 # Gecko Browser (Android 9+)
 
-A native Kotlin browser starter using Mozilla GeckoView, with no Google Play Services dependency. `minSdk=28`, ABI filters/splits for `arm64-v8a` and `armeabi-v7a`, AppCompat theme switching, HTTPS-first navigation, AppAuth OAuth scaffolding, Room + SQLCipher storage, native URL-filter matching, and segmented downloads.
+A native Kotlin browser starter using Mozilla GeckoView, with no Google Play Services dependency. `minSdk=28`, ABI filters/splits for `arm64-v8a` and `armeabi-v7a`, AppCompat theme switching, HTTPS-only navigation, AppAuth OAuth scaffolding, Room + SQLCipher storage, native URL-filter matching, and segmented downloads.
 
 ## Build
 
