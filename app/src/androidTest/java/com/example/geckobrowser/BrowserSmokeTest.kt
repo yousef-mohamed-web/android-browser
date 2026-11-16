@@ -2,11 +2,10 @@ package com.example.geckobrowser
 
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -15,22 +14,32 @@ import org.junit.runner.RunWith
 class BrowserSmokeTest {
 
     @Test
-    fun appLaunchesAndShowsBrowserControls() {
+    fun appLaunchesAndShowsNOVAHome() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             scenario.onActivity { activity ->
                 val content = activity.findViewById<ViewGroup>(android.R.id.content)
                 val views = content.descendants().toList()
 
-                assertTrue("Browser content view should be present", content.childCount > 0)
-                assertTrue("Address/search field should be visible", views.any { it is EditText })
-                assertTrue("Go button should be visible", views.filterIsInstance<Button>().any { it.text.toString() == "Go" })
-                assertTrue(
-                    "Google should be the default search engine",
-                    views.filterIsInstance<Button>().any { it.text.toString() == "Search: Google" }
-                )
+                assertTrue("NOVA home screen should be present", views.filterIsInstance<TextView>().any { it.text.toString() == "NOVA" })
+                assertTrue("Address/search field should be visible", views.filterIsInstance<EditText>().any { it.hint.toString().contains("Search or enter website") })
+                assertTrue("Settings entry should be visible", views.filterIsInstance<TextView>().any { it.contentDescription == "Settings" })
+            }
+        }
+    }
 
-                val addressField = views.filterIsInstance<EditText>().first()
-                assertEquals("https://www.google.com", addressField.text.toString())
+    @Test
+    fun settingsScreenShowsAppearanceAndSearchOptions() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val content = activity.findViewById<ViewGroup>(android.R.id.content)
+                val settings = content.descendants().filterIsInstance<TextView>().firstOrNull { it.contentDescription == "Settings" }
+                assertTrue("Settings entry should exist", settings != null)
+                settings!!.performClick()
+                val labels = content.descendants().filterIsInstance<TextView>().map { it.text.toString() }.toList()
+                assertTrue("Appearance section should be available", labels.contains("APPEARANCE"))
+                assertTrue("Theme controls should be available", labels.contains("System") && labels.contains("Light") && labels.contains("Dark"))
+                assertTrue("Home layout presets should be available", labels.contains("Comfortable") && labels.contains("Compact") && labels.contains("Minimal"))
+                assertTrue("Search settings should be available", labels.contains("SEARCH") && labels.contains("Google"))
             }
         }
     }
