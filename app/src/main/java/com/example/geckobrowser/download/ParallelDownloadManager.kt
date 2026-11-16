@@ -46,8 +46,8 @@ class ParallelDownloadManager(private val context: Context) {
                     conn.inputStream.use { input -> RandomAccessFile(target, "rw").use { out ->
                         out.seek(start); val buffer = ByteArray(64 * 1024)
                         while (true) {
-                            while (paused.get()) { ensureActive(); delay(200) }
-                            ensureActive(); check(!cancelled.get()) { "Download cancelled" }
+                            while (paused.get()) { currentCoroutineContext().ensureActive(); delay(200) }
+                            currentCoroutineContext().ensureActive(); check(!cancelled.get()) { "Download cancelled" }
                             val n = input.read(buffer); if (n < 0) break
                             out.write(buffer, 0, n); val total = done.addAndGet(n.toLong()); onProgress(total, length)
                         }
@@ -63,7 +63,7 @@ class ParallelDownloadManager(private val context: Context) {
         conn.connectTimeout = 20000; conn.readTimeout = 30000
         try { conn.inputStream.use { input -> target.outputStream().use { out ->
             val total = conn.contentLengthLong; var read = 0L; val buf = ByteArray(64 * 1024)
-            while (true) { while (paused.get()) delay(200); ensureActive(); check(!cancelled.get())
+            while (true) { while (paused.get()) delay(200); currentCoroutineContext().ensureActive(); check(!cancelled.get())
                 val n = input.read(buf); if (n < 0) break; out.write(buf, 0, n); read += n; progress(read, total)
             }
         } } } finally { conn.disconnect() }
