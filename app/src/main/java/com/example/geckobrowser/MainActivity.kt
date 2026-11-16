@@ -46,16 +46,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val runtimeSettings = GeckoRuntimeSettings.Builder()
-            .allowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
-            .remoteDebuggingEnabled(false)
-            .aboutConfigEnabled(false)
-            .globalPrivacyControlEnabled(true)
-            .debugLogging(false)
-            .consoleOutput(false)
-            .configFilePath("")
-            .build()
-        runtime = GeckoRuntime.create(this, runtimeSettings)
+        runtime = getOrCreateRuntime()
         session = GeckoSession().apply {
             settings.useTrackingProtection = true
             open(runtime)
@@ -389,4 +380,26 @@ class MainActivity : ComponentActivity() {
         else if (currentPage != "Home") showHome() else super.onBackPressed()
     }
     override fun onDestroy() { session.close(); super.onDestroy() }
+
+    private fun getOrCreateRuntime(): GeckoRuntime {
+        return sharedRuntime ?: synchronized(MainActivity::class.java) {
+            sharedRuntime ?: GeckoRuntime.create(
+                applicationContext,
+                GeckoRuntimeSettings.Builder()
+                    .allowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
+                    .remoteDebuggingEnabled(false)
+                    .aboutConfigEnabled(false)
+                    .globalPrivacyControlEnabled(true)
+                    .debugLogging(false)
+                    .consoleOutput(false)
+                    .configFilePath("")
+                    .build()
+            ).also { sharedRuntime = it }
+        }
+    }
+
+    companion object {
+        @Volatile
+        private var sharedRuntime: GeckoRuntime? = null
+    }
 }
