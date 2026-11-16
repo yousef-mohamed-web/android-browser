@@ -32,7 +32,7 @@ jobs:
 
       - name: Show APK sizes
         run: |
-          find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -type f -print0 | while IFS= read -r -d '' apk; do
+          find app/build/outputs/apk/release -type f -name '*.apk' -print0 | while IFS= read -r -d '' apk; do
             du -h "$apk"
           done
 
@@ -40,7 +40,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: GeckoBrowser-optimized-release-apks
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/**/*.apk
           if-no-files-found: error
           compression-level: 0
           retention-days: 14
