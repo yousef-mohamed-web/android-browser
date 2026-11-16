@@ -24,7 +24,7 @@ abstract class BrowserDatabase : RoomDatabase() { abstract fun dao(): BrowserDao
             instance ?: build(context).also { instance = it }
         }
         private fun build(context: Context): BrowserDatabase {
-            SQLiteDatabase.loadLibs(context)
+            System.loadLibrary("sqlcipher")
             val prefs = androidx.security.crypto.EncryptedSharedPreferences.create("db_key", "master_key", context,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                 androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM)
