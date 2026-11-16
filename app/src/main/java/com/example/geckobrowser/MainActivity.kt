@@ -17,6 +17,7 @@ import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.mozilla.geckoview.GeckoRuntime
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 
@@ -35,7 +36,7 @@ class MainActivity : ComponentActivity() {
         session = GeckoSession().apply { open(runtime) }
         val root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(10) }
         val toolbar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
-        address = EditText(this).apply { hint = "Search or enter address"; singleLine = true; imeOptions = 2; setText("https://www.google.com") }
+        address = EditText(this).apply { hint = "Search or enter address"; setSingleLine(true); imeOptions = 2; setText("https://www.google.com") }
         val go = Button(this).apply { text = "Go"; setOnClickListener { navigate(address.text.toString()) } }
         toolbar.addView(address, LinearLayout.LayoutParams(0, -2, 1f)); toolbar.addView(go)
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -45,19 +46,19 @@ class MainActivity : ComponentActivity() {
         actions.addView(Button(this).apply { text = "Light"; setOnClickListener { AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO) } })
         actions.addView(Button(this).apply { text = "PiP"; setOnClickListener { enterBrowserPip() } })
         status = TextView(this).apply { text = "Ready"; setPadding(8) }
-        geckoView = GeckoView(this).apply { setSession(session); isFocusable = true }
+        geckoView = GeckoView(this).apply { setSession(this@MainActivity.session); isFocusable = true }
         root.addView(toolbar); root.addView(actions); root.addView(status)
         root.addView(geckoView, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(root)
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoSession.NavigationDelegate.LoadDecision {
+            override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
                 val uri = request.uri
                 if (uri.startsWith("http://") && !insecure.isAllowed(uri)) {
                     pendingHttp = uri
                     runOnUiThread { showHttpWarning(uri) }
-                    return GeckoSession.NavigationDelegate.LoadDecision.DENY
+                    return GeckoResult.deny()
                 }
-                return GeckoSession.NavigationDelegate.LoadDecision.ALLOW
+                return null
             }
         }
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -77,9 +78,7 @@ class MainActivity : ComponentActivity() {
 
     private fun showHttpWarning(uri: String) {
         android.app.AlertDialog.Builder(this).setTitle("Insecure HTTP site")
-            .setMessage("This site does not use HTTPS. Your connection may be intercepted. Continue only if you trust this site.
-
-$uri")
+            .setMessage("This site does not use HTTPS. Your connection may be intercepted. Continue only if you trust this site.\n\n$uri")
             .setNegativeButton("Cancel", null).setPositiveButton("Continue once") { _, _ ->
                 insecure.allowOnce(uri); session.loadUri(uri)
             }.show()
