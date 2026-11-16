@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Rational
 import android.view.Gravity
+import android.widget.PopupMenu
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -27,6 +28,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var geckoView: GeckoView
     private lateinit var address: EditText
     private lateinit var status: TextView
+    private lateinit var searchEngineButton: Button
+    private val searchPrefs by lazy { getSharedPreferences("browser_preferences", MODE_PRIVATE) }
+    private val searchEngines = linkedMapOf("Google" to "https://www.google.com/search?q=", "Bing" to "https://www.bing.com/search?q=", "DuckDuckGo" to "https://duckduckgo.com/?q=")
     private val insecure = InsecureNavigationGate()
     private var pendingHttp: String? = null
 
@@ -40,6 +44,11 @@ class MainActivity : ComponentActivity() {
         val go = Button(this).apply { text = "Go"; setOnClickListener { navigate(address.text.toString()) } }
         toolbar.addView(address, LinearLayout.LayoutParams(0, -2, 1f)); toolbar.addView(go)
         val actions = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        searchEngineButton = Button(this).apply {
+            text = "Search: ${selectedSearchEngine()}"
+            setOnClickListener { showSearchEngineMenu() }
+        }
+        actions.addView(searchEngineButton)
         actions.addView(Button(this).apply { text = "Desktop"; setOnClickListener { BrowserEngine.setDesktopMode(session, true) } })
         actions.addView(Button(this).apply { text = "Mobile"; setOnClickListener { BrowserEngine.setDesktopMode(session, false) } })
         actions.addView(Button(this).apply { text = "Dark"; setOnClickListener { AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES) } })
@@ -71,9 +80,28 @@ class MainActivity : ComponentActivity() {
     private fun navigate(raw: String) {
         val value = raw.trim()
         if (value.isEmpty()) return
-        val uri = if (value.contains(" ") || (!value.contains("://") && !value.contains('.'))) BrowserEngine.googleSearchUrl(value) else if (!value.contains("://")) "https://$value" else value
+        val uri = if (value.contains(" ") || (!value.contains("://") && !value.contains('.'))) searchUrl(value) else if (!value.contains("://")) "https://$value" else value
         if (uri.startsWith("http://") && !insecure.isAllowed(uri)) { pendingHttp = uri; showHttpWarning(uri); return }
         session.loadUri(uri)
+    }
+
+    private fun selectedSearchEngine(): String = searchPrefs.getString("search_engine", "Google") ?: "Google"
+
+    private fun searchUrl(query: String): String {
+        val base = searchEngines[selectedSearchEngine()] ?: searchEngines.getValue("Google")
+        return base + java.net.URLEncoder.encode(query, Charsets.UTF_8.name())
+    }
+
+    private fun showSearchEngineMenu() {
+        PopupMenu(this, searchEngineButton).apply {
+            searchEngines.keys.forEach { engine -> menu.add(engine) }
+            setOnMenuItemClickListener { item ->
+                searchPrefs.edit().putString("search_engine", item.title.toString()).apply()
+                searchEngineButton.text = "Search: ${selectedSearchEngine()}"
+                true
+            }
+            show()
+        }
     }
 
     private fun showHttpWarning(uri: String) {
