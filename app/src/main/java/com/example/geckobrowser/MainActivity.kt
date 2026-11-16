@@ -205,7 +205,7 @@ class MainActivity : ComponentActivity() {
         val forward = smallButton("›") { if (canGoForward) session.goForward() }
         val refresh = smallButton("↻") { session.reload() }
         bar.addView(back); bar.addView(forward); bar.addView(refresh)
-        val url = EditText(this).apply { setTextColor(textMain); setHintTextColor(textMuted); hint = "Search or enter address"; singleLine = true; textSize = 13f; background = rounded(surface, 14, border, 1); setPadding(dp(10), dp(8), dp(10), dp(8)); imeOptions = 2; setOnEditorActionListener { _, _, _ -> navigate(text.toString()); true } }
+        val url = EditText(this).apply { setTextColor(textMain); setHintTextColor(textMuted); hint = "Search or enter address"; isSingleLine = true; textSize = 13f; background = rounded(surface, 14, border, 1); setPadding(dp(10), dp(8), dp(10), dp(8)); imeOptions = 2; setOnEditorActionListener { _, _, _ -> navigate(text.toString()); true } }
         bar.addView(url, LinearLayout.LayoutParams(0, dp(44), 1f))
         bar.addView(smallButton("⋮") { showBrowserMenu(it) })
         wrapper.addView(bar)
