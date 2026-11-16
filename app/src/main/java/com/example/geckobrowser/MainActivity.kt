@@ -61,84 +61,9 @@ class MainActivity : ComponentActivity() {
                 val uri = request.uri
                 val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
                 if (scheme == "https" || uri == "about:blank") return null
-                // Defense in depth: reject HTTP and every non-web scheme.
                 runOnUiThread {
                     Toast.makeText(this@MainActivity, "Blocked non-HTTPS navigation for your safety.", Toast.LENGTH_SHORT).show()
                 }
-                return GeckoResult.deny()rowser
-
-import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
-import android.os.Build
-import android.os.Bundle
-import android.util.Rational
-import android.view.Gravity
-import android.view.View
-import android.widget.*
-import androidx.activity.ComponentActivity
-import androidx.appcompat.app.AppCompatDelegate
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.GeckoRuntimeSettings
-import org.mozilla.geckoview.GeckoResult
-import org.mozilla.geckoview.GeckoSession
-import org.mozilla.geckoview.GeckoView
-
-class MainActivity : ComponentActivity() {
-    private lateinit var runtime: GeckoRuntime
-    private lateinit var session: GeckoSession
-    private lateinit var geckoView: GeckoView
-    private lateinit var address: EditText
-    private lateinit var content: FrameLayout
-    private lateinit var bottomBar: LinearLayout
-    private val prefs by lazy { getSharedPreferences("browser_preferences", MODE_PRIVATE) }
-    private val searchEngines = linkedMapOf("Google" to "https://www.google.com/search?q=", "Bing" to "https://www.bing.com/search?q=", "DuckDuckGo" to "https://duckduckgo.com/?q=")
-    private val insecure = InsecureNavigationGate()
-    private var pendingHttp: String? = null
-    private var currentPage = "Home"
-
-    private val dark: Boolean get() = when (AppCompatDelegate.getDefaultNightMode()) {
-        AppCompatDelegate.MODE_NIGHT_YES -> true
-        AppCompatDelegate.MODE_NIGHT_NO -> false
-        else -> (resources.configuration.uiMode and 0x30) == 0x20
-    }
-    private val bg get() = if (dark) Color.rgb(14, 19, 30) else Color.rgb(247, 249, 253)
-    private val surface get() = if (dark) Color.rgb(27, 35, 49) else Color.WHITE
-    private val textMain get() = if (dark) Color.rgb(241, 245, 251) else Color.rgb(25, 35, 52)
-    private val textMuted get() = if (dark) Color.rgb(164, 177, 197) else Color.rgb(105, 119, 140)
-    private val accent = Color.rgb(77, 119, 255)
-    private val border get() = if (dark) Color.rgb(54, 65, 83) else Color.rgb(226, 232, 242)
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        val runtimeSettings = GeckoRuntimeSettings.Builder()
-            .allowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
-            .remoteDebuggingEnabled(false)
-            .aboutConfigEnabled(false)
-            .configFilePath("")
-            .build()
-        runtime = GeckoRuntime.create(this, runtimeSettings)
-        session = GeckoSession().apply {
-            settings.useTrackingProtection = true
-            open(runtime)
-        }
-        geckoView = GeckoView(this).apply { setSession(session); isFocusable = true }
-        buildShell()
-        session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
-                val uri = request.uri
-                val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
-                if (scheme == "https") return null
-                if (scheme == "http") {
-                    if (insecure.isAllowed(uri)) return null
-                    pendingHttp = uri
-                    runOnUiThread { showHttpWarning(uri) }
-                    return GeckoResult.deny()
-                }
-                if (uri == "about:blank") return null
-                // Never hand file:, content:, data:, javascript:, intent: or other
-                // non-web schemes from page content to Android or the OS.
                 return GeckoResult.deny()
             }
         }
@@ -388,11 +313,6 @@ class MainActivity : ComponentActivity() {
             }; true }
             show()
         }
-    }
-    private fun showHttpWarning(uri: String) {
-        android.app.AlertDialog.Builder(this).setTitle("Insecure HTTP site")
-            .setMessage("This site does not use HTTPS. Your connection may be intercepted. Continue only if you trust this site.\n\n$uri")
-            .setNegativeButton("Cancel", null).setPositiveButton("Continue once") { _, _ -> insecure.allowOnce(uri); showBrowser(); session.loadUri(uri) }.show()
     }
     private fun actionChip(text: String, description: String, click: () -> Unit) = TextView(this).apply {
         this.text = text; contentDescription = description; gravity = Gravity.CENTER; textSize = 12f; typeface = Typeface.DEFAULT_BOLD
