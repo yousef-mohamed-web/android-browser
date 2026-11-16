@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-release:
@@ -60,11 +60,30 @@ jobs:
             echo "--- Largest packaged entries (uncompressed) ---"
             unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {print $1 " " $4}' | sort -nr | sed -n '1,25p'
             echo "--- Size by top-level directory ---"
-            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {n=split($4,a,"/"); key=a[1]; if (key != "") total[key]+=$1} END {for (k in total) printf "%12d %s\n", total[k], k}' | sort -nr
+            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {n=split($4,a,"/"); key=a[1]; if (key != "") total[key]+=$1} END {for (k in total) printf "%12d %s\\n", total[k], k}' | sort -nr
             echo "--- Native libraries by ABI ---"
             unzip -l "$apk" | awk 'NF >= 4 && index($4, "lib/") == 1 {print $1 " " $4}' | sort -nr | sed -n '1,30p'
             echo
           done
+
+      - name: Compress ARM64 APK and save it in the repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p downloads
+          zip -9 -j downloads/NOVA-ARM64-deflate9.zip app/build/outputs/apk/release/app-arm64-v8a-release.apk
+          echo "Compressed package size:"
+          du -h downloads/NOVA-ARM64-deflate9.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add downloads/NOVA-ARM64-deflate9.zip
+          if git diff --cached --quiet; then
+            echo "Compressed APK is unchanged; no repository commit is needed."
+          else
+            git commit -m "Add compressed ARM64 APK [skip ci]"
+            git push origin HEAD:main
+          fi
 
       - name: Upload ARM64 release APK
         uses: actions/upload-artifact@v4
