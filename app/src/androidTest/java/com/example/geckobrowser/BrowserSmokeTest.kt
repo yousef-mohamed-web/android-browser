@@ -39,7 +39,7 @@ class BrowserSmokeTest {
                 val settings = content.descendants().filterIsInstance<TextView>().firstOrNull { it.contentDescription == "Settings" }
                 assertTrue("Settings entry should exist", settings != null)
                 settings!!.performClick()
-                val labels = content.descendants().filterIsInstance<TextView>().map { it.text.toString() }.toList()
+                val labels = content.descendants().filterIsInstance<TextView>().map { it.text.toString().replace("✓", "").trim() }.toList()
                 assertTrue("Appearance section should be available", labels.contains("APPEARANCE"))
                 assertTrue("Theme controls should be available", labels.contains("System") && labels.contains("Light") && labels.contains("Dark"))
                 assertTrue("Home layout presets should be available", labels.contains("Comfortable") && labels.contains("Compact") && labels.contains("Minimal"))
