@@ -1,0 +1,6 @@
+! Minimal sample block rules. Replace/update from a licensed, versioned EasyList-compatible source.
+||doubleclick.net^
+||googlesyndication.com^
+||adservice.google.com^
+||googletagmanager.com^
+||facebook.net^

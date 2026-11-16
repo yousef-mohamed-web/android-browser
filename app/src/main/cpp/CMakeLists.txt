@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(gecko_filter LANGUAGES CXX)
+add_library(gecko_filter SHARED filter.cpp)
+find_library(log-lib log)
+target_link_libraries(gecko_filter ${log-lib})
+target_compile_features(gecko_filter PRIVATE cxx_std_17)

@@ -1,0 +1,3 @@
+-keep class org.mozilla.geckoview.** { *; }
+-keep class net.openid.appauth.** { *; }
+-keepattributes *Annotation*
