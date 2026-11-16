@@ -51,12 +51,18 @@ class MainActivity : ComponentActivity() {
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
                 val uri = request.uri
-                if (uri.startsWith("http://") && !insecure.isAllowed(uri)) {
+                val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
+                if (scheme == "https") return null
+                if (scheme == "http") {
+                    if (insecure.isAllowed(uri)) return null
                     pendingHttp = uri
                     runOnUiThread { showHttpWarning(uri) }
                     return GeckoResult.deny()
                 }
-                return null
+                if (uri == "about:blank") return null
+                // Never hand file:, content:, data:, javascript:, intent: or other
+                // non-web schemes from page content to Android or the OS.
+                return GeckoResult.deny()
             }
         }
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -274,7 +280,12 @@ class MainActivity : ComponentActivity() {
         val value = raw.trim()
         if (value.isEmpty()) return
         val uri = if (value.contains(" ") || (!value.contains("://") && !value.contains('.'))) searchUrl(value) else if (!value.contains("://")) "https://$value" else value
-        if (uri.startsWith("http://") && !insecure.isAllowed(uri)) { pendingHttp = uri; showHttpWarning(uri); return }
+        val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
+        if (scheme != "https" && scheme != "http") {
+            Toast.makeText(this, "Only HTTPS websites are supported (HTTP requires confirmation).", Toast.LENGTH_LONG).show()
+            return
+        }
+        if (scheme == "http") { pendingHttp = uri; showHttpWarning(uri); return }
         showBrowser()
         address.setText(uri)
         session.loadUri(uri)
