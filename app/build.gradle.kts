@@ -3,6 +3,7 @@ plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id(
 android {
     namespace = "com.example.geckobrowser"
     compileSdk = 36
+    ndkVersion = "27.2.12479018"
     defaultConfig {
         applicationId = "com.example.geckobrowser"
         manifestPlaceholders["appAuthRedirectScheme"] = "com.example.geckobrowser"
