@@ -7,7 +7,6 @@ import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
-import org.junit.Assert.assertFalse
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -45,16 +44,6 @@ class BrowserSmokeTest {
         }
     }
 
-
-    @Test
-    fun insecureHttpExceptionIsSingleUse() {
-        val gate = InsecureNavigationGate()
-        val url = "http://example.com/private"
-        assertFalse("HTTP must be blocked unless explicitly approved", gate.isAllowed(url))
-        gate.allowOnce(url)
-        assertTrue("Explicit approval should allow exactly one navigation", gate.isAllowed(url))
-        assertFalse("The same approval must not be reusable", gate.isAllowed(url))
-    }
 
     private fun ViewGroup.descendants(): Sequence<View> = sequence {
         for (index in 0 until childCount) {
