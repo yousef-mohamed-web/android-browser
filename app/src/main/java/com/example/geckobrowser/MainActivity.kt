@@ -1,6 +1,7 @@
 package com.example.geckobrowser
 
 import android.content.pm.PackageManager
+import androidx.appcompat.app.AlertDialog
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -28,6 +29,8 @@ class MainActivity : ComponentActivity() {
     private val prefs by lazy { getSharedPreferences("browser_preferences", MODE_PRIVATE) }
     private val searchEngines = linkedMapOf("Google" to "https://www.google.com/search?q=", "Bing" to "https://www.bing.com/search?q=", "DuckDuckGo" to "https://duckduckgo.com/?q=")
     private var currentPage = "Home"
+    private var canGoBack = false
+    private var canGoForward = false
 
     private val dark: Boolean get() = when (AppCompatDelegate.getDefaultNightMode()) {
         AppCompatDelegate.MODE_NIGHT_YES -> true
@@ -44,7 +47,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val runtimeSettings = GeckoRuntimeSettings.Builder()
-            .allowInsecureConnections(GeckoRuntimeSettings.HTTPS_ONLY)
+            .allowInsecureConnections(GeckoRuntimeSettings.ALLOW_ALL)
             .remoteDebuggingEnabled(false)
             .aboutConfigEnabled(false)
             .globalPrivacyControlEnabled(true)
@@ -57,17 +60,25 @@ class MainActivity : ComponentActivity() {
             settings.useTrackingProtection = true
             open(runtime)
         }
-        geckoView = GeckoView(this).apply { setSession(session); isFocusable = true }
+        geckoView = GeckoView(this).apply { setSession(this@MainActivity.session); isFocusable = true }
         buildShell()
         session.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLoadRequest(session: GeckoSession, request: GeckoSession.NavigationDelegate.LoadRequest): GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
-                val uri = request.uri
-                val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
-                if (scheme == "https" || uri == "about:blank") return null
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Blocked non-HTTPS navigation for your safety.", Toast.LENGTH_SHORT).show()
-                }
-                return GeckoResult.deny()
+            override fun onLoadRequest(
+                session: GeckoSession,
+                request: GeckoSession.NavigationDelegate.LoadRequest
+            ): GeckoResult<org.mozilla.geckoview.AllowOrDeny>? {
+                val target = request.uri
+                val scheme = android.net.Uri.parse(target).scheme?.lowercase()
+                if (scheme == "https" || target == "about:blank") return null
+                return requestRiskyNavigation(target, scheme ?: "unknown")
+            }
+
+            override fun onCanGoBack(session: GeckoSession, value: Boolean) {
+                canGoBack = value
+            }
+
+            override fun onCanGoForward(session: GeckoSession, value: Boolean) {
+                canGoForward = value
             }
         }
         session.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -125,7 +136,7 @@ class MainActivity : ComponentActivity() {
         }
         searchCard.addView(label("⌕", 25, textMuted, true), LinearLayout.LayoutParams(dp(34), dp(48)))
         address = EditText(this).apply {
-            hint = "Search or enter website"; textSize = 14f; singleLine = true; setTextColor(textMain); setHintTextColor(textMuted)
+            hint = "Search or enter website"; textSize = 14f; isSingleLine = true; setTextColor(textMain); setHintTextColor(textMuted)
             setPadding(0, 0, 0, 0); background = null; imeOptions = 2
             setOnEditorActionListener { _, _, _ -> navigate(text.toString()); true }
         }
@@ -190,8 +201,8 @@ class MainActivity : ComponentActivity() {
         content.removeAllViews()
         val wrapper = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
         val bar = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(10), dp(8), dp(10), dp(8)) }
-        val back = smallButton("‹") { if (session.canGoBack) session.goBack() }
-        val forward = smallButton("›") { if (session.canGoForward) session.goForward() }
+        val back = smallButton("‹") { if (canGoBack) session.goBack() }
+        val forward = smallButton("›") { if (canGoForward) session.goForward() }
         val refresh = smallButton("↻") { session.reload() }
         bar.addView(back); bar.addView(forward); bar.addView(refresh)
         val url = EditText(this).apply { setTextColor(textMain); setHintTextColor(textMuted); hint = "Search or enter address"; singleLine = true; textSize = 13f; background = rounded(surface, 14, border, 1); setPadding(dp(10), dp(8), dp(10), dp(8)); imeOptions = 2; setOnEditorActionListener { _, _, _ -> navigate(text.toString()); true } }
@@ -284,15 +295,48 @@ class MainActivity : ComponentActivity() {
     private fun navigate(raw: String) {
         val value = raw.trim()
         if (value.isEmpty()) return
-        val uri = if (value.contains(" ") || (!value.contains("://") && !value.contains('.'))) searchUrl(value) else if (!value.contains("://")) "https://$value" else value
-        val scheme = android.net.Uri.parse(uri).scheme?.lowercase()
-        if (scheme != "https") {
-            Toast.makeText(this, "NOVA only opens HTTPS websites.", Toast.LENGTH_LONG).show()
-            return
+        val hasExplicitScheme = Regex("^[A-Za-z][A-Za-z0-9+.-]*:").containsMatchIn(value)
+        val uri = when {
+            hasExplicitScheme -> value
+            value.contains(" ") || !value.contains('.') -> searchUrl(value)
+            else -> "https://$value"
         }
         showBrowser()
         address.setText(uri)
         session.loadUri(uri)
+    }
+
+    private fun requestRiskyNavigation(
+        target: String,
+        scheme: String
+    ): GeckoResult<org.mozilla.geckoview.AllowOrDeny> {
+        val decision = GeckoResult<org.mozilla.geckoview.AllowOrDeny>()
+        val host = android.net.Uri.parse(target).host
+        val destination = host?.let { "$scheme://$it" } ?: "$scheme: link"
+        val warning = when (scheme) {
+            "http" -> "This website uses HTTP, not encrypted HTTPS. Data exchanged with it may be visible to others."
+            "file" -> "This is a local file address. Continue only if you recognize and trust this file."
+            "content" -> "This link requests content provided by an Android app. Continue only if you trust its source."
+            "javascript" -> "This link can execute JavaScript in the current page. It may read or change page data."
+            "data" -> "This link contains embedded data or code. Opening it may display untrusted content."
+            else -> "This link uses the '$scheme' protocol, which may open another app or access external content."
+        }
+        runOnUiThread {
+            AlertDialog.Builder(this)
+                .setTitle("Security warning")
+                .setMessage("$warning\n\nDestination: $destination\n\nDo you want to continue?")
+                .setPositiveButton("Continue") { _, _ ->
+                    decision.complete(org.mozilla.geckoview.AllowOrDeny.ALLOW)
+                }
+                .setNegativeButton("Cancel") { _, _ ->
+                    decision.complete(org.mozilla.geckoview.AllowOrDeny.DENY)
+                }
+                .setOnCancelListener {
+                    decision.complete(org.mozilla.geckoview.AllowOrDeny.DENY)
+                }
+                .show()
+        }
+        return decision
     }
 
     private fun selectedSearchEngine(): String = prefs.getString("search_engine", "Google") ?: "Google"
@@ -341,7 +385,7 @@ class MainActivity : ComponentActivity() {
         }
     }
     override fun onBackPressed() {
-        if (currentPage == "Browser") { if (session.canGoBack) session.goBack() else showHome() }
+        if (currentPage == "Browser") { if (canGoBack) session.goBack() else showHome() }
         else if (currentPage != "Home") showHome() else super.onBackPressed()
     }
     override fun onDestroy() { session.close(); super.onDestroy() }
