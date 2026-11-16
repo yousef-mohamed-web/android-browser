@@ -75,7 +75,7 @@ Content-Type: application/json
 $json
 --$boundary--"""
         val req = Request.Builder().url("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name")
-            .header("Authorization", "Bearer $token").post(body).build()
+            .header("Authorization", "Bearer $token").post(body.toRequestBody("multipart/related; boundary=$boundary".toMediaType())).build()
         http.newCall(req).execute().use { r -> check(r.isSuccessful) { "Drive sync failed: ${r.code} ${r.body?.string()}" }; return r.body?.string().orEmpty() }
     }
 
