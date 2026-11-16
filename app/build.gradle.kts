@@ -41,7 +41,7 @@ dependencies {
     implementation("androidx.room:room-ktx:2.8.5")
     kapt("androidx.room:room-compiler:2.8.5")
     implementation("androidx.security:security-crypto:1.1.0")
-    implementation("net.zetetic:sqlcipher-android:4.9.0")
+    implementation("net.zetetic:sqlcipher-android:4.20.0")
     implementation("androidx.sqlite:sqlite-ktx:2.7.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
