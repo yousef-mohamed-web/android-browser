@@ -50,6 +50,22 @@ jobs:
             du -h "$apk"
           done
 
+      - name: Analyze APK size breakdown
+        shell: bash
+        run: |
+          set -euo pipefail
+          for apk in app/build/outputs/apk/release/*.apk; do
+            [ -f "$apk" ] || continue
+            echo "===== APK: $apk ====="
+            echo "--- Largest packaged entries (uncompressed) ---"
+            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {print $1 " " $4}' | sort -nr | head -n 25
+            echo "--- Size by top-level directory ---"
+            unzip -l "$apk" | awk 'NF >= 4 && $1 ~ /^[0-9]+$/ {n=split($4,a,"/"); key=a[1]; if (key != "") total[key]+=$1} END {for (k in total) printf "%12d %s\\n", total[k], k}' | sort -nr
+            echo "--- Native libraries by ABI ---"
+            unzip -l "$apk" | awk 'NF >= 4 && $4 ~ /^lib\\// {print $1 " " $4}' | sort -nr | head -n 30
+            echo
+          done
+
       - name: Upload installable release APKs
         uses: actions/upload-artifact@v4
         with:
