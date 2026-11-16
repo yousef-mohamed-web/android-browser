@@ -83,9 +83,12 @@ class MainActivity : ComponentActivity() {
 
     private fun showHome() {
         currentPage = "Home"
+        val layoutMode = prefs.getString("home_layout", "Comfortable") ?: "Comfortable"
+        val compact = layoutMode == "Compact"
+        val minimal = layoutMode == "Minimal"
         val page = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(bg) }
         val scroll = ScrollView(this)
-        val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(20), dp(20), dp(22)) }
+        val column = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(if (compact) 14 else 20), dp(if (compact) 14 else 20), dp(if (compact) 14 else 20), dp(22)) }
         val header = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val brand = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         val logo = TextView(this).apply {
@@ -100,10 +103,10 @@ class MainActivity : ComponentActivity() {
         header.addView(brand, LinearLayout.LayoutParams(0, -2, 1f))
         header.addView(actionChip("⚙", "Settings") { showSettings() })
         column.addView(header)
-        column.addView(space(26))
+        column.addView(space(if (compact) 14 else 26))
         column.addView(label("Good day.", 28, textMain, true))
         column.addView(label("Where would you like to go?", 14, textMuted))
-        column.addView(space(20))
+        column.addView(space(if (compact) 12 else 20))
 
         val searchCard = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL; setPadding(dp(14), dp(7), dp(8), dp(7))
@@ -118,7 +121,7 @@ class MainActivity : ComponentActivity() {
         searchCard.addView(address, LinearLayout.LayoutParams(0, dp(48), 1f))
         searchCard.addView(actionChip("GO", "Go") { navigate(address.text.toString()) })
         column.addView(searchCard)
-        column.addView(space(22))
+        column.addView(space(if (compact) 12 else 22))
 
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; setPadding(dp(20), dp(19), dp(20), dp(18))
@@ -130,8 +133,8 @@ class MainActivity : ComponentActivity() {
         hero.addView(label("A faster, calmer place for the things you love.", 13, Color.rgb(231, 236, 255)))
         hero.addView(space(15))
         hero.addView(actionChip("Explore the web  →", "Explore") { navigate("https://www.google.com") })
-        column.addView(hero)
-        column.addView(space(24))
+        if (!minimal) column.addView(hero)
+        column.addView(space(if (compact || minimal) 12 else 24))
 
         val shortcutsHeader = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL; gravity = Gravity.CENTER_VERTICAL }
         shortcutsHeader.addView(label("Quick access", 17, textMain, true), LinearLayout.LayoutParams(0, -2, 1f))
@@ -163,7 +166,7 @@ class MainActivity : ComponentActivity() {
         privacyText.addView(label("Privacy comes first", 14, textMain, true))
         privacyText.addView(label("Your browsing. Your choices.", 11, textMuted))
         privacy.addView(privacyText)
-        column.addView(privacy)
+        if (!minimal) column.addView(privacy)
         scroll.addView(column)
         page.addView(scroll, LinearLayout.LayoutParams(-1, -1))
         content.removeAllViews()
@@ -283,8 +286,7 @@ class MainActivity : ComponentActivity() {
         return base + java.net.URLEncoder.encode(query, Charsets.UTF_8.name())
     }
     private fun showSearchEngineMenu() {
-        val anchor = if (::address.isInitialized) address else content
-        PopupMenu(this, anchor).apply {
+        PopupMenu(this, content).apply {
             searchEngines.keys.forEach { menu.add(it) }
             setOnMenuItemClickListener { item -> prefs.edit().putString("search_engine", item.title.toString()).apply(); if (currentPage == "Settings") showSettings(); true }
             show()
