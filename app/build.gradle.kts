@@ -45,7 +45,7 @@ dependencies {
     implementation("androidx.sqlite:sqlite-ktx:2.7.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
-    implementation("com.squareup.okhttp3:okhttp:5.1.0")
+    implementation("com.squareup.okhttp3:okhttp:5.5.1")
     implementation("net.openid:appauth:0.11.1")
     implementation("com.google.code.gson:gson:2.13.2")
 
