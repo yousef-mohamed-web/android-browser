@@ -6,7 +6,11 @@ import android.widget.EditText
 import android.widget.TextView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.mozilla.geckoview.GeckoRuntime
+import org.mozilla.geckoview.GeckoRuntimeSettings
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -44,6 +48,28 @@ class BrowserSmokeTest {
         }
     }
 
+
+    @Test
+    fun geckoRuntimeUsesStrictSecuritySettings() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val field = MainActivity::class.java.getDeclaredField("runtime")
+                field.isAccessible = true
+                val runtime = field.get(activity) as GeckoRuntime
+                assertEquals(GeckoRuntimeSettings.HTTPS_ONLY, runtime.settings.allowInsecureConnections)
+                assertFalse("Remote debugging must remain disabled", runtime.settings.remoteDebuggingEnabled)
+                assertFalse("about:config must remain disabled", runtime.settings.aboutConfigEnabled)
+            }
+        }
+    }
+
+    @Test
+    fun appDoesNotRequestLegacySharedStoragePermission() {
+        val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
+        val info = context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.GET_PERMISSIONS)
+        val permissions = info.requestedPermissions?.toList() ?: emptyList()
+        assertFalse("The app must not request broad external storage access", permissions.contains(android.Manifest.permission.WRITE_EXTERNAL_STORAGE))
+    }
 
     private fun ViewGroup.descendants(): Sequence<View> = sequence {
         for (index in 0 until childCount) {
