@@ -1,8 +1,6 @@
 name: Android APK Build
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 permissions:
@@ -12,11 +10,18 @@ jobs:
   build:
     name: Build debug APK
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout source
+      - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Verify and extract project archive
+        run: |
+          test -f GeckoBrowser-source.zip
+          unzip -q GeckoBrowser-source.zip -d .
+          test -f GeckoBrowser/settings.gradle.kts
+          test -f GeckoBrowser/app/build.gradle.kts
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -38,12 +43,13 @@ jobs:
           gradle-version: '8.13'
 
       - name: Build debug APK
+        working-directory: GeckoBrowser
         run: gradle --no-daemon clean :app:assembleDebug
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: GeckoBrowser-debug-apk
-          path: app/build/outputs/apk/**/*.apk
+          path: GeckoBrowser/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
