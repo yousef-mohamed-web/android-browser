@@ -5,6 +5,7 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "com.example.geckobrowser"
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.example.geckobrowser"
         minSdk = 28
         targetSdk = 35
         versionCode = 1
