@@ -66,6 +66,7 @@ jobs:
           echo "Generated APK files:"
           find app/build/outputs/apk -type f -name '*.apk' -print
           test -f app/build/outputs/apk/debug/app-x86_64-debug.apk
+          test -f app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
           test -f app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
 
       - name: Run tests on Emulator.wtf (Android 10 / API 29)
@@ -79,6 +80,18 @@ jobs:
           record-video: true
           timeout: 20m
           outputs-dir: build/emulator-wtf-results
+
+      - name: Run ARMv7 app tests on Android 9 (API 28)
+        uses: emulator-wtf/actions/run-tests@v1.2.6
+        with:
+          api-token: ${{ secrets.EW_API_TOKEN }}
+          app: app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
+          test: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          devices: |
+            model=Pixel2,version=28
+          record-video: true
+          timeout: 20m
+          outputs-dir: build/emulator-wtf-armv7-api28-results
 
       - name: Upload Emulator.wtf test results
         if: always()
