@@ -81,14 +81,14 @@ jobs:
           timeout: 20m
           outputs-dir: build/emulator-wtf-results
 
-      - name: Run ARMv7 app tests on Android 9 (API 28)
+      - name: Run ARMv7 app tests on Android 11 (API 30 with ARM translation)
         uses: emulator-wtf/actions/run-tests@v1.2.6
         with:
           api-token: ${{ secrets.EW_API_TOKEN }}
           app: app/build/outputs/apk/debug/app-armeabi-v7a-debug.apk
           test: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
           devices: |
-            model=Pixel2,version=28
+            model=Pixel2,version=30
           record-video: true
           timeout: 20m
           outputs-dir: build/emulator-wtf-armv7-api28-results
