@@ -86,7 +86,7 @@ jobs:
           fi
 
       - name: Upload ARM64 release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GeckoBrowser-ARM64
           path: app/build/outputs/apk/release/app-arm64-v8a-release.apk
@@ -95,7 +95,7 @@ jobs:
           retention-days: 14
 
       - name: Upload ARMv7 release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GeckoBrowser-ARMv7
           path: app/build/outputs/apk/release/app-armeabi-v7a-release.apk

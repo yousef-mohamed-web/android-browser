@@ -59,7 +59,7 @@ jobs:
         run: gradle --no-daemon --stacktrace clean :app:assembleDebug
 
       - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GeckoBrowser-debug-apk
           path: app/build/outputs/apk/**/*.apk
